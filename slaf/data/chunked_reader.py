@@ -1545,6 +1545,7 @@ def create_chunked_reader(
     chunk_size: int = 25000,
     value_type: str = "uint16",
     collection_name: str = "RNA",
+    layer_name: str = "data",
 ) -> BaseChunkedReader:
     """
     Factory function to create the appropriate chunked reader based on file format.
@@ -1559,6 +1560,9 @@ def create_chunked_reader(
         Data type for expression values. Default: "uint16".
     collection_name : str
         Name of the measurement collection for TileDB format. Default: "RNA".
+    layer_name : str
+        Name of the X layer for TileDB format. Default: "data".
+        Common values: "data", "raw", "norm", "norm_10k".
 
     Returns:
     --------
@@ -1590,7 +1594,8 @@ def create_chunked_reader(
         # For TileDB, use "auto" as default to preserve original data types for validation
         tiledb_value_type = value_type if value_type != "uint16" else "auto"
         return ChunkedTileDBReader(
-            file_path, collection_name=collection_name, value_type=tiledb_value_type
+            file_path, collection_name=collection_name, value_type=tiledb_value_type,
+            layer_name=layer_name
         )
     else:
         raise ValueError(f"Unsupported format for chunked reading: {format_type}")
