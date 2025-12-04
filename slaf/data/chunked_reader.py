@@ -861,7 +861,8 @@ class ChunkedTileDBReader(BaseChunkedReader):
     """Chunked reader for TileDB SOMA format files."""
 
     def __init__(
-        self, tiledb_path: str, collection_name: str = "RNA", value_type: str = "auto"
+        self, tiledb_path: str, collection_name: str = "RNA", value_type: str = "auto",
+        layer_name: str = "data"
     ):
         """
         Initialize TileDB chunked reader.
@@ -870,10 +871,13 @@ class ChunkedTileDBReader(BaseChunkedReader):
             tiledb_path: Path to TileDB SOMA experiment directory
             collection_name: Name of the measurement collection (default: "RNA")
             value_type: Data type for expression values (default: "uint16")
+            layer_name: Name of the X layer to read (default: "data"). Common values:
+                       "data", "raw", "norm", "norm_10k"
         """
         super().__init__(tiledb_path)
         self.collection_name = collection_name
         self.value_type = value_type
+        self.layer_name = layer_name
         self._experiment: Any = None
         self._X: Any = None
         self._obs_df: pd.DataFrame | None = None
@@ -900,7 +904,16 @@ class ChunkedTileDBReader(BaseChunkedReader):
                 f"Available collections: {available_collections}"
             )
 
-        self._X = self._experiment.ms[self.collection_name].X["data"]
+        # Get the X layer
+        x_collection = self._experiment.ms[self.collection_name].X
+        if self.layer_name not in x_collection:
+            available_layers = list(x_collection.keys())
+            raise ValueError(
+                f"Layer '{self.layer_name}' not found in X. "
+                f"Available layers: {available_layers}"
+            )
+        
+        self._X = x_collection[self.layer_name]
 
     def _close_file(self) -> None:
         """Close TileDB SOMA experiment."""
